@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Jun 26 18:28:22 2021
 
-@author: admin
-"""
 import random
 import os
 
@@ -24,7 +20,7 @@ class Character:
     
     def get_strength(self):
         return self.strength
-    
+     
     def get_power(self):
         return self.power
     
@@ -34,6 +30,12 @@ class Character:
     def get_name(self):
         return self.name
     
+    def get_level(self):
+        return self.level
+    
+    def increase_level(self, p):
+        self.level += p
+     
     def set_health(self, nh):
         self.health = nh
     
@@ -53,6 +55,9 @@ class Player(Character):
         super(Player, self).__init__(name, health, strength, 
                        power, dexterity)
        # self.inventory = Inventory()
+        self.level = 0
+        
+
         
 class Enemy(Character):
     def __init__(self, name, description ,health, strength, power, dexterity):
@@ -117,8 +122,8 @@ class Inventory:
 
 
 class State:
-    def __init__(self, states=[]):
-        self.states = states
+    def __init__(self):
+        global states
         self.end = False
     
     def request_end(self): return self.end
@@ -126,53 +131,82 @@ class State:
     def update(self):
         print("update")
     
+    
+    
 class MainMenu(State):
-    def __init__(self, states=[]):
-        super(MainMenu, self).__init__(states)
-        print("Hello from Main menu")
-        states.append(RoomState())
+    def __init__(self):
+        super(MainMenu, self).__init__()
     def update(self):
-        number = int(input("Enter a number"))
-        if number > 5:
-            self.end = True
+        gui.Title()
+        gui.menu_option("1", "Go to game")
+        gui.menu_option("2", "Exit game")
+        number = gui.get_input("")
+        print(number)
+        self.proccess_input(number)
         
+    def proccess_input(self, inp):
+        if inp == "2":
+            print("a")
+            self.end == True
+        elif inp == "1":
+            states.append(CharacterCreator())
+        else:
+            return "invalid input"
+            
         
         
 class RoomState(State):
-    def __init__(self, states=[]):
-        super(RoomState, self).__init__(states)
+    global states
+    def __init__(self):
+        super(RoomState, self).__init__()
         print("Hello from Room state")
     def update(self):
         print("update")
-    
-""""
-class GUI:
+        
+class CharacterCreator(State):
+    global states
     def __init__(self):
-        self.header = "Welcome to the game" + "\n" + "==================================" + "\n"
+        super(CharacterCreator, self).__init__()
+        print("Hello from character creator")
+    
+    
 
-    
-    def render(self):
-        print(self.header)
-    
-"""
+class GUI:
+    def Title(self):
+        print("=====WELCOME=====")
+        print("       TO A")
+        print("     RPG_GAME\n")
+    def menu_option(self, i, option):
+        print(f"- {i} -> " + option)
+        
+    def get_input(self, i):
+        j = input(i + " ----> ")
+        return j
+        
+        
+
 class Game:
     
     def __init__(self):
         self.__end = False
-        self.states = []
-        #self.gui = GUI() 
+        global states
+        states = []
+        characters = []
     
     def get_end(self): return self.__end
 
     def set_end(self, booll): self.__end = booll
     
     def run(self):
-        self.states.append(MainMenu())
+        global gui
+        gui = GUI() 
+        states.append(MainMenu())
         while self.__end == False:
-            if len(self.states) > 0:
-                self.states[-1].update()
-                if self.states[-1].request_end():
-                    self.states.pop()
+            if len(states) > 0:
+                states[-1].update()
+                if states[-1].request_end():
+                    states.pop()
+        print("ending a game")
 
     
     

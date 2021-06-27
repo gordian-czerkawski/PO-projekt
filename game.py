@@ -6,6 +6,7 @@ Created on Sat Jun 26 18:28:22 2021
 @author: admin
 """
 import random
+import os
 
 class Character:
     
@@ -45,11 +46,7 @@ class Character:
     def set_dexterity(self, nd):
         self.dexterity = nd
         
-         
-
     
-    
-         
          
 class Player(Character):
     def __init__(self, name, health, strength, power, dexterity):
@@ -83,11 +80,6 @@ class Generator:
 
 
 
-
-
-
-
-
 class Item:
     def __innit__(self, name, description, modifier, attribute):
         self.name = name
@@ -99,7 +91,6 @@ class Item:
 class Food(Item):
     def be_consumed(self):
         self.__del__()
-
 
 
 
@@ -123,31 +114,76 @@ class Inventory:
     def __innit__(self, integer):
         self.capacity += integer
     
-My_gen = Generator()
-en1 = My_gen.enemyGen()
 
 
+class State:
+    def __init__(self, states=[]):
+        self.states = states
+        self.end = False
+    
+    def request_end(self): return self.end
+    
+    def update(self):
+        print("update")
+    
+class MainMenu(State):
+    def __init__(self, states=[]):
+        super(MainMenu, self).__init__(states)
+        print("Hello from Main menu")
+        states.append(RoomState())
+    def update(self):
+        number = int(input("Enter a number"))
+        if number > 5:
+            self.end = True
+        
+        
+        
+class RoomState(State):
+    def __init__(self, states=[]):
+        super(RoomState, self).__init__(states)
+        print("Hello from Room state")
+    def update(self):
+        print("update")
+    
+""""
+class GUI:
+    def __init__(self):
+        self.header = "Welcome to the game" + "\n" + "==================================" + "\n"
 
+    
+    def render(self):
+        print(self.header)
+    
+"""
 class Game:
     
     def __init__(self):
-        self.end = False
+        self.__end = False
+        self.states = []
+        #self.gui = GUI() 
+    
+    def get_end(self): return self.__end
+
+    def set_end(self, booll): self.__end = booll
     
     def run(self):
-        print("aaa")
-        while self.end == False:
-            print("a")
-        print
+        self.states.append(MainMenu())
+        while self.__end == False:
+            if len(self.states) > 0:
+                self.states[-1].update()
+                if self.states[-1].request_end():
+                    self.states.pop()
+
+    
     
 class Main:
 
    def __init__(self):
-       print("aa")
        game = Game()
        game.run()
 
     
     
-Main()
+a=Main()
     
         

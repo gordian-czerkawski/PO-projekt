@@ -64,8 +64,13 @@ class Player(Character):
     def __init__(self, name, health, strength, power, dexterity):
         super(Player, self).__init__(name, health, strength, 
                        power, dexterity)
-       # self.inventory = Inventory()
-        self.level = 0
+
+        self.exp = 0
+        
+    def get_exp(self):
+        return self.exp
+    def change_exp(self, i):
+        self.exp += i
         
 
         
@@ -77,12 +82,15 @@ class Generator:
         lines = file.readlines()
         enemy_name = lines[random.randint(0,len(lines)-1)][:-1]
         file.close
-    
-    
+        vals = [30, 45, 60]
+        random.shuffle(vals)
+        a = vals[0]
+        b = vals[1]
+        c = vals[2]
         health = random.randint(1,5)
-        attack = random.randint(10,60)
-        power = random.randint(10,60)
-        dexterity = random.randint(1,60)
+        attack = random.randint(10,a)
+        power = random.randint(10,b)
+        dexterity = random.randint(10,c)
         return Character(enemy_name, health, attack, power, dexterity)
 
 
@@ -134,8 +142,7 @@ class State:
     
     def ending_game(self): return self.end_game
     
-    def update(self):
-        None
+    def update(self): None
 
     
     
@@ -147,21 +154,17 @@ class MainMenu(State):
     def update(self):
         if not self.character_created:
             gui.Title()
-            gui.option("0", "Choose character")
+            gui.option("1", "Choose character")
             gui.option("2", "Exit game")
-            number = gui.get_input("")
-        else:
-            os.system("clear")
-            gui.Title()
-            gui.option("1", "Go to game")
-            gui.option("2", "Exit game")
-            number = gui.get_input("")
-        self.proccess_input(number)
-        
+            number = ''
+            while number != "1" and number != "2":
+                number = gui.get_input("")
+            return number
+            self.request_end()
+
     def proccess_input(self, inp):
         if inp == "1":
-            states.append(RoomState())
-        elif inp == "0":
+            player = CharacterCreator()
             states.append(CharacterCreator())
             self.character_created = True
             states.pop()
@@ -169,6 +172,9 @@ class MainMenu(State):
             self.end_game = True
         else:
             return "invalid input"
+    
+    def character_cr(self):
+        self.character_cr = True
         
             
         
@@ -178,32 +184,26 @@ class RoomState(State):
         super(RoomState, self).__init__()
     def update(self):
         global player
+        generator = Generator()
         encounter = generator.enemyGen()
         gui.enter_room(encounter)
         while encounter.is_alive() and player.is_alive():
-            gui.show_enemy_stats(encounter)
-            print("")
-            gui.show_stats(player)
-            print("")
-            gui.option("1", "melee attack")
-            gui.option("2", "magic attack")
-            gui.option("3", "range attack")
+            gui.fight_interface(player, encounter)
             ch = gui.get_input("What are you doing?").lower()
             self.attack_enemy(ch, player, encounter)
             os.system("clear")
             if not encounter.is_alive(): 
                 time.sleep(2)
                 break
-            gui.show_enemy_stats(encounter)
-            print("")
-            gui.show_stats(player)
-            print("")
+            gui.fight_interface(player, encounter)
             time.sleep(2)
             self.attack_enemy(str(random.randint(1,2)), encounter, player)
             time.sleep(2)
             os.system("clear")
         if player.is_alive():
+            player.change_exp(10)
             gui.show_stats(player)
+            print("EXP: " + str(player.get_exp()))
             print()
             print(encounter.get_name() + " is dead!") 
             input("Press enter when you're ready to get in to the next room ")
@@ -271,12 +271,15 @@ class CharacterCreator(State):
             if fighter == "wizard":
                 player = Player("Wizard", 7, 30, 50, 40)
                 self.created = True
+                return player
             elif fighter == "knight":
                 player = Player("Knight", 7, 50, 40, 30)
                 self.created = True
+                return player
             elif fighter == "archer":
                 player = Player("Archer", 7, 40, 30, 50)
                 self.created = True
+                return player
         self.request_end()
 
         
@@ -286,6 +289,7 @@ class CharacterCreator(State):
 
 class GUI:
     def Title(self):
+        os.system("clear")
         print("=====WELCOME=====")
         print("       TO A")
         print("     RPG_GAME\n")
@@ -334,6 +338,15 @@ class GUI:
     def show_enemy_stats(self, char):
         print(char.name)
         print("HP: " + str(char.health))
+        
+    def fight_interface(self, player, encounter):
+        gui.show_enemy_stats(encounter)
+        print("")
+        gui.show_stats(player)
+        print("")
+        gui.option("1", "melee attack")
+        gui.option("2", "magic attack")
+        gui.option("3", "range attack")
                 
         
         
@@ -352,15 +365,15 @@ class Game:
     def run(self):
         os.system("clear")
         global gui
-        global generator
-        generator = Generator()
-        gui = GUI() 
+        gui = GUI()
         states.append(MainMenu())
+        self.menu_options(states[-1].update())
+        states.pop()
         while self.__end == False:
             if len(states) > 0:
                 states[-1].update()
                 if states[-1].ending_game():
-                    self.__end = True
+                    self.set_end(False)
                 if states[-1].request_end():
                     states.pop()  
             else:
@@ -369,8 +382,16 @@ class Game:
         print()
         print("THANK YOU FOR PLAYING")
         input()
-
     
+    def menu_options(self, i):
+        if i == "1":
+            states.append(CharacterCreator())
+            self.character_created = True
+            states.pop()
+        elif i == "2":
+            self.__end = True
+        else:
+            return "invalid input"
     
 class Main:
 

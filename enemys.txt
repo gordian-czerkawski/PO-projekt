@@ -6,7 +6,6 @@ Banshee
 Chimera
 Dragon
 Werewolf
-Orc
 Goblin
 Ghost
-Dark Elf
+Dark Elf 

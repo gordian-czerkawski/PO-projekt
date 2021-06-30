@@ -1,0 +1,6 @@
+Sword 5 -5 2
+Shield 6 -2 -2
+Wand 0 4 2
+Dagger 1 2 5
+Chicken 2
+Bread 1 

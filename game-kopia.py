@@ -45,16 +45,16 @@ class Character:
         if self.health < 1:
             self.alive = False
     
-    def set_strength(self, ns):
-        self.strength = ns
+    def change_strength(self, ns):
+        self.strength += ns
     
-    def set_power(self, np):
-        self.power = np
+    def change_power(self, np):
+        self.power += np
     
-    def set_dexterity(self, nd):
-        self.dexterity = nd
+    def change_dexterity(self, nd):
+        self.dexterity += nd
     
-    def set_dead(self):
+    def change_dead(self):
         self.alive = False
     
         
@@ -66,11 +66,16 @@ class Player(Character):
                        power, dexterity)
 
         self.exp = 0
+        self.luck = 100
         
     def get_exp(self):
         return self.exp
     def change_exp(self, i):
         self.exp += i
+    def get_luck(self):
+        return self.luck
+    def change_luck(self, i):
+        self.luck += i
         
 
         
@@ -82,53 +87,56 @@ class Generator:
         lines = file.readlines()
         enemy_name = lines[random.randint(0,len(lines)-1)][:-1]
         file.close
-        vals = [30, 45, 60]
+        vals = [35, 55, 70]
         random.shuffle(vals)
         a = vals[0]
         b = vals[1]
         c = vals[2]
-        health = random.randint(1,5)
+        health = random.randint(1,1)
         attack = random.randint(10,a)
         power = random.randint(10,b)
         dexterity = random.randint(10,c)
         return Character(enemy_name, health, attack, power, dexterity)
-
+        
+    def itemGen(self):
+        temp = []
+        file = open("items.txt","r")
+        lines = file.readlines()
+        item = lines[random.randint(0,len(lines)-1)][:-1]
+        item = item.split()
+        if len(item) == 2:
+             new_item = Food(item[0], item[1])
+             return new_item
+        elif len(item) == 4:
+            new_item = Item(item[0], item[1], item[2], item[3])
+            return new_item
 
 
 
 class Item:
-    def __innit__(self, name, description, modifier, attribute):
+    def __init__(self, name, stren, power, dext):
         self.name = name
-        self.description = description
-        self.modifier = modifier
-        self.attribute = attribute
+        self.stren = stren
+        self.power= power
+        self.dext = dext
+        self.type = "weapon"
+    def get_name(self): return self.name
+    def get_stren(self): return self.stren
+    def get_power(self): return self.power
+    def get_dext(self): return self.dext
+    def get_type(self): return self.type
 
 
 class Food(Item):
-    def be_consumed(self):
-        self.__del__()
+    def __init__(self, name, h_boost):
+        self.name = name
+        self.h_boost = h_boost
+        self.type = "food"
+    def get_name(self): return self.name
+    def get_h_boost(self): return self.h_boost
+    def get_type(self): return self.type
 
 
-
-class Inventory:
-    def __innit__(self, capacity):
-        self.content = []
-        self.capacity = capacity
-    
-    def add(self, item):
-        if self.content.length() < self.capacity:
-            self.content.append(item)
-        else:
-            print("TO DO")
-    
-    def delete(self, item):
-         self.content.append.remove(item)
-         
-    def clear(self):
-        self.content = []
-        
-    def __innit__(self, integer):
-        self.capacity += integer
     
 
 
@@ -189,7 +197,7 @@ class RoomState(State):
         gui.enter_room(encounter)
         while encounter.is_alive() and player.is_alive():
             gui.fight_interface(player, encounter)
-            ch = gui.get_input("What are you doing?").lower()
+            ch = gui.get_input("What do you want to do?").lower()
             self.attack_enemy(ch, player, encounter)
             os.system("clear")
             if not encounter.is_alive(): 
@@ -206,7 +214,9 @@ class RoomState(State):
             print("EXP: " + str(player.get_exp()))
             print()
             print(encounter.get_name() + " is dead!") 
+            self.loot()
             input("Press enter when you're ready to get in to the next room ")
+            
         else:
             self.end_game = True
             
@@ -256,6 +266,34 @@ class RoomState(State):
             print('Enter "1", "2" or "3"!!!')
             print()
         
+    def loot(self):
+        os.system("clear")
+        dice_roll = random.randint(1, 100)
+        if dice_roll < player.get_luck():
+            print("There is a loot in the room")
+            print()
+            generator = Generator()
+            item = generator.itemGen()
+        
+            if item.get_type() == "food":
+                print("TYPE: FOOD")
+                print("NAME: " + item.get_name())
+                print("HP BOOST " + item.get_h_boost())
+                odp = input("Do you want to take it (y/n)\n -->")
+                if odp == "y":
+                    player.change_health(int(item.get_h_boost()))
+            elif item.get_type() == "weapon":
+                print("TYPE: WEAPON")
+                print("NAME: " + item.get_name())
+                print("STR " + item.get_stren())
+                print("POWR " + item.get_power())
+                print("DEX " + item.get_dext())
+                odp = input("Do you want to take it (y/n)\n -->")
+                if odp == "y":
+                        player.change_strength(int(item.get_stren()))
+                        player.change_power(int(item.get_power()))
+                        player.change_dexterity(int(item.get_dext()))
+                        
         
 class CharacterCreator(State):
 
@@ -288,11 +326,13 @@ class CharacterCreator(State):
     
 
 class GUI:
+    
     def Title(self):
         os.system("clear")
-        print("=====WELCOME=====")
-        print("       TO A")
-        print("     RPG_GAME\n")
+        print("  =====WELCOME=====")
+        print("        TO A")
+        print("      RPG_GAME\n")
+        
     def option(self, i, option):
         print(f"- {i} -> " + option)
         
@@ -304,9 +344,9 @@ class GUI:
         os.system("clear")
         print("                    AVAIBLE FIGHTERS\n  ")
         print("                 WIZARD|KNIGHT|ARCHER|")
-        print("STRENGTH:          30 |  50  |   40   ")
-        print("POWER:             50 |  40  |   30  ")
-        print("DEXTERITY:         40 |  30  |   50  ")
+        print("STRENGTH:           30 |  50  |   40   ")
+        print("POWER:              50 |  40  |   30  ")
+        print("DEXTERITY:          40 |  30  |   50  ")
         print("\n")
     
     def enter_room(self, encounter):
@@ -314,19 +354,14 @@ class GUI:
         time.sleep(1)
         print("You are entering a room...\n")
         time.sleep(2)
-        print("The door are closing behind you...\n")
+        print("The door closes behind you...\n")
         time.sleep(2)
-        if str(type(encounter)) == "<class '__main__.Character'>":
-            print("There is a " + encounter.get_name() + " in front of you.\n")
-            time.sleep(1)
-            print("Get ready to fight\n")
-            time.sleep(2.5)
-            os.system("clear")
-        else:
-            print("Your luck's in!")
-            print(type(encounter))
-            time.sleep(1)
-            print("You found a " + encounter.get_name())
+        print("There is a " + encounter.get_name() + " in front of you.\n")
+        time.sleep(1)
+        print("Get ready to fight\n")
+        time.sleep(2.5)
+        os.system("clear")
+
     
     def show_stats(self, char):
         print(char.name)
@@ -334,6 +369,7 @@ class GUI:
         print("STRENGTH: " + str(char.strength))
         print("POWER: " + str(char.power))
         print("DEXTERITY: " + str(char.dexterity))
+    
     
     def show_enemy_stats(self, char):
         print(char.name)
@@ -402,5 +438,5 @@ class Main:
     
     
 a=Main()
-    
+
         

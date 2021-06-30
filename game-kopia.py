@@ -7,15 +7,14 @@ import os
 
 class Character:
     
-    def __init__(self, name, health, strength, power, dexterity, defence):
+    def __init__(self, name, health, strength, power, dexterity):
          self.name = name
          self.health = health
          self.strength = strength
          self.power = power
          self.dexterity = dexterity
-         self.defence = defence
+
          self.alive = True
-    
          
     def get_health(self):
         return self.health
@@ -35,11 +34,16 @@ class Character:
     def get_level(self):
         return self.level
     
+    def is_alive(self):
+        return self.alive
+    
     def increase_level(self, p):
         self.level += p
      
-    def set_health(self, nh):
-        self.health = nh
+    def change_health(self, i):
+        self.health += i
+        if self.health < 1:
+            self.alive = False
     
     def set_strength(self, ns):
         self.strength = ns
@@ -49,21 +53,21 @@ class Character:
     
     def set_dexterity(self, nd):
         self.dexterity = nd
+    
+    def set_dead(self):
+        self.alive = False
+    
         
     
          
 class Player(Character):
-    def __init__(self, name, health, strength, power, dexterity, defence):
+    def __init__(self, name, health, strength, power, dexterity):
         super(Player, self).__init__(name, health, strength, 
-                       power, dexterity, defence)
+                       power, dexterity)
        # self.inventory = Inventory()
         self.level = 0
         
 
-        
-class Enemy(Character):
-    def __init__(self, name ,health, strength, power, dexterity, defence):
-        super(Enemy, self).__init__(name, health, strength, power, dexterity, defence)
         
 
 class Generator:
@@ -79,8 +83,7 @@ class Generator:
         attack = random.randint(10,60)
         power = random.randint(10,60)
         dexterity = random.randint(1,60)
-        defence = random.randint(1,60) 
-        return Enemy(enemy_name, health, attack, power, dexterity, defence)
+        return Character(enemy_name, health, attack, power, dexterity)
 
 
 
@@ -132,7 +135,7 @@ class State:
     def ending_game(self): return self.end_game
     
     def update(self):
-        print("update")
+        None
 
     
     
@@ -142,19 +145,17 @@ class MainMenu(State):
         super(MainMenu, self).__init__()
         self.character_created = False
     def update(self):
-        while not self.character_created:
+        if not self.character_created:
             gui.Title()
             gui.option("0", "Choose character")
             gui.option("2", "Exit game")
             number = gui.get_input("")
-            print(number)
-            self.proccess_input(number)
-        os.system("clear")
-        gui.Title()
-        gui.option("1", "Go to game")
-        gui.option("2", "Exit game")
-        number = gui.get_input("")
-        print(number)
+        else:
+            os.system("clear")
+            gui.Title()
+            gui.option("1", "Go to game")
+            gui.option("2", "Exit game")
+            number = gui.get_input("")
         self.proccess_input(number)
         
     def proccess_input(self, inp):
@@ -163,8 +164,9 @@ class MainMenu(State):
         elif inp == "0":
             states.append(CharacterCreator())
             self.character_created = True
+            states.pop()
         elif inp == "2":
-            self.ending_game()
+            self.end_game = True
         else:
             return "invalid input"
         
@@ -175,50 +177,106 @@ class RoomState(State):
     def __init__(self):
         super(RoomState, self).__init__()
     def update(self):
+        global player
         encounter = generator.enemyGen()
         gui.enter_room(encounter)
-        states.append(FightState(encounter))
+        while encounter.is_alive() and player.is_alive():
+            gui.show_enemy_stats(encounter)
+            print("")
+            gui.show_stats(player)
+            print("")
+            gui.option("1", "melee attack")
+            gui.option("2", "magic attack")
+            gui.option("3", "range attack")
+            ch = gui.get_input("What are you doing?").lower()
+            self.attack_enemy(ch, player, encounter)
+            os.system("clear")
+            if not encounter.is_alive(): 
+                time.sleep(2)
+                break
+            gui.show_enemy_stats(encounter)
+            print("")
+            gui.show_stats(player)
+            print("")
+            time.sleep(2)
+            self.attack_enemy(str(random.randint(1,2)), encounter, player)
+            time.sleep(2)
+            os.system("clear")
+        if player.is_alive():
+            gui.show_stats(player)
+            print()
+            print(encounter.get_name() + " is dead!") 
+            input("Press enter when you're ready to get in to the next room ")
+        else:
+            self.end_game = True
+            
         
+    
+    def attack_enemy(self, typ, ch1, ch2):
+        time.sleep(1)
+        print()
+        print(ch1.get_name() + " attacks " + ch2.get_name())
+        print()
+        time.sleep(1)
+        rzut_pl = random.randint(1, 100)
+        rzut_en = random.randint(1, 100)
+        if typ == "1":
+            if (ch1.get_strength() - rzut_pl) >= (ch2.get_strength() - rzut_en):
+                print(ch2.get_name() + " gets hit!")
+                print()
+                time.sleep(2)
+                ch2.change_health(-1)
+            else:
+                print(ch2.get_name() + " doesn't get hit!")
+                print()
+                time.sleep(2)
+                
+        elif typ == "2":
+            if (ch1.get_power() - rzut_pl) >= (ch2.get_power() - rzut_en):
+                print(ch2.get_name() + " gets hit!")
+                print()
+                time.sleep(2)
+                ch2.change_health(-1)
+            else:
+                print(ch2.get_name() + " doesn't get hit!")
+                print()
+                time.sleep(2)
+        elif typ == "3":
+            if (ch1.get_dexterity() - rzut_pl) >= (ch2.get_dexterity() - rzut_en):
+                print(ch2.get_name() + " gets hit!")
+                print()
+                time.sleep(2)
+                ch2.change_health(-1)
+            else:
+                print(ch2.get_name() + " doesn't get hit!")
+                print()
+                time.sleep(2)
+        else:
+            print()
+            print('Enter "1", "2" or "3"!!!')
+            print()
         
-class FightState(State):
-    def __init__(self, encounter):
-        super(FightState, self).__init__()
-        self.encounter = encounter
-    def update(self):
-        global player
-        gui.show_stats(self.encounter)
-        print("")
-        gui.show_stats(player)
-        print("")
-        gui.option("1", "melee attack")
-        gui.option("2", "magic attack")
-        gui.option("2", "range attack")
-        ch = gui.get_input("What are you doing?").lower()
         
 class CharacterCreator(State):
 
     def __init__(self):
         super(CharacterCreator, self).__init__()
-        print("Hello from character creator")
+        self.created = False
         self.update()
     def update(self):
-        print("pdssfdfsd")
-        while True:
+        while not self.created:
             gui.fighters()
             fighter = gui.get_input("Choose your fighter ").lower()
             global player
             if fighter == "wizard":
-                player = Player("Wizard", 7, 40, 60, 50, 45)
-                break
+                player = Player("Wizard", 7, 30, 50, 40)
+                self.created = True
             elif fighter == "knight":
-                player = Player("Knight", 7, 50, 40, 40, 50)
-                break
-            elif fighter == "barbarian":
-                player = Player("Barbarian", 7, 60, 40, 50, 40)
-                break
-            elif fighter == "rogue": 
-                player = Player("Rogue", 7, 40, 60, 50, 45)
-                break
+                player = Player("Knight", 7, 50, 40, 30)
+                self.created = True
+            elif fighter == "archer":
+                player = Player("Archer", 7, 40, 30, 50)
+                self.created = True
         self.request_end()
 
         
@@ -241,11 +299,10 @@ class GUI:
     def fighters(self):
         os.system("clear")
         print("                    AVAIBLE FIGHTERS\n  ")
-        print("             WIZARD|KNIGHT|BARBARIAN|ROGUE ")
-        print("STRENGTH:       35 |  50  |   60    | 40   ")
-        print("POWER:          60 |  40  |   30    | 35   ")
-        print("DEFENCE:        35 |  60  |   35    | 35   ")
-        print("DEXTERITY:      40 |  30  |   40    | 60   ")
+        print("                 WIZARD|KNIGHT|ARCHER|")
+        print("STRENGTH:          30 |  50  |   40   ")
+        print("POWER:             50 |  40  |   30  ")
+        print("DEXTERITY:         40 |  30  |   50  ")
         print("\n")
     
     def enter_room(self, encounter):
@@ -255,10 +312,12 @@ class GUI:
         time.sleep(2)
         print("The door are closing behind you...\n")
         time.sleep(2)
-        if str(type(encounter)) == "<class '__main__.Enemy'>":
+        if str(type(encounter)) == "<class '__main__.Character'>":
             print("There is a " + encounter.get_name() + " in front of you.\n")
             time.sleep(1)
             print("Get ready to fight\n")
+            time.sleep(2.5)
+            os.system("clear")
         else:
             print("Your luck's in!")
             print(type(encounter))
@@ -270,8 +329,11 @@ class GUI:
         print("HP: " + str(char.health))
         print("STRENGTH: " + str(char.strength))
         print("POWER: " + str(char.power))
-        print("DEFENCE: " + str(char.defence))
         print("DEXTERITY: " + str(char.dexterity))
+    
+    def show_enemy_stats(self, char):
+        print(char.name)
+        print("HP: " + str(char.health))
                 
         
         
@@ -282,7 +344,6 @@ class Game:
         self.__end = False
         global states
         states = []
-        characters = []
     
     def get_end(self): return self.__end
 
@@ -298,13 +359,16 @@ class Game:
         while self.__end == False:
             if len(states) > 0:
                 states[-1].update()
+                if states[-1].ending_game():
+                    self.__end = True
                 if states[-1].request_end():
-                    states.pop()
-            elif states[-1].end_game():
-                    break    
+                    states.pop()  
             else:
                 states.append(RoomState())
+        os.system("clear")
+        print()
         print("THANK YOU FOR PLAYING")
+        input()
 
     
     

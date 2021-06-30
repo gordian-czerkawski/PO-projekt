@@ -15,5 +15,6 @@
 * ustalenie wzajemnych relacji
 ### Dane
 * reprezentacje przedmiotów oraz wrogów w pliku .txt, na podstawie których wewnętrzny generator będzie tworzył obiekty
-![klasy](https://user-images.githubusercontent.com/73501387/121516553-a2766680-c9ee-11eb-927e-f4eda25d0a71.png)
+* <img width="652" alt="image" src="https://user-images.githubusercontent.com/73501387/123959082-0d8fd900-d9ae-11eb-85f6-0a8b6689df71.png">
+
 
